@@ -42,7 +42,7 @@ class ThemeProvider extends Component<Props> {
   outerTheme: Object
   broadcast: *
   unsubscribeToOuterId: number
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     // If there is a ThemeProvider wrapper anywhere around this theme provider, merge this theme
     // with the outer theme
     if (this.context[channel] !== undefined) {
@@ -69,7 +69,7 @@ class ThemeProvider extends Component<Props> {
     }
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  UNSAFE_componentWillReceiveProps(nextProps: Props) {
     if (this.props.theme !== nextProps.theme) {
       this.publish(nextProps.theme)
     }

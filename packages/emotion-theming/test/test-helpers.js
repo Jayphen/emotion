@@ -50,7 +50,7 @@ export class PropTrap extends Component {
     super(props)
     this.props.intercept(props.theme)
   }
-  componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (nextProps) {
       this.props.intercept(nextProps.theme)
     }
@@ -68,7 +68,7 @@ export class ContextTrap extends Component {
   static contextTypes = {
     [channel]: PropTypes.object.isRequired
   }
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     if (this.context[channel]) {
       this.unsubscribe = this.context[channel].subscribe(this.props.intercept)
     }

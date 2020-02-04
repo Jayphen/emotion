@@ -44,7 +44,7 @@ export function createStyled(
         static withComponent = (newComponent: React.ElementType) =>
           createEmotion(newComponent)(...styles)
 
-        componentWillMount() {
+        UNSAFE_componentWillMount() {
           if (this.context[channel] !== undefined) {
             this.unsubscribe = this.context[channel].subscribe(
               setTheme.bind(this)

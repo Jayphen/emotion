@@ -10,7 +10,7 @@ const withTheme = (Component: React.ComponentType<Props>) => {
 
   class WithTheme extends React.Component<{}, { theme: Object }> {
     unsubscribeId: number
-    componentWillMount() {
+    UNSAFE_componentWillMount() {
       const themeContext = this.context[channel]
       if (themeContext === undefined) {
         // eslint-disable-next-line no-console
