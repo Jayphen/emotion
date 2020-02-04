@@ -1,142 +1,211 @@
-<p align="center" style="color: #343a40">
-  <img src="https://cdn.rawgit.com/tkh44/emotion/master/emotion.png" alt="emotion" height="150" width="150">
-  <h1 align="center">emotion</h1>
-</p>
-<p align="center" style="font-size: 1.2rem;">The Next Generation of CSS-in-JS</p>
+# emotion-theming
 
-[![Backers on Open Collective](https://opencollective.com/emotion/backers/badge.svg)](#backers) [![Sponsors on Open Collective](https://opencollective.com/emotion/sponsors/badge.svg)](#sponsors) [![npm version](https://badge.fury.io/js/emotion.svg)](https://badge.fury.io/js/emotion)
-[![Build Status](https://img.shields.io/circleci/project/github/emotion-js/emotion/master.svg)](https://circleci.com/gh/emotion-js/emotion)
-[![codecov](https://codecov.io/gh/emotion-js/emotion/branch/master/graph/badge.svg)](https://codecov.io/gh/emotion-js/emotion)
-![core gzip size](http://img.badgesize.io/https://unpkg.com/emotion/dist/emotion.umd.min.js?compression=gzip&label=core%20gzip%20size)
-![core size](http://img.badgesize.io/https://unpkg.com/emotion/dist/emotion.umd.min.js?label=core%20size)
-![react gzip size](http://img.badgesize.io/https://unpkg.com/react-emotion/dist/emotion.umd.min.js?compression=gzip&label=react%20gzip%20size)
-![react size](http://img.badgesize.io/https://unpkg.com/react-emotion/dist/emotion.umd.min.js?label=react%20size)
-[![slack](https://emotion.now.sh/badge.svg)](http://emotion.now.sh/)
-[![spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/emotion)
+> A CSS-in-JS theming solution for React(-like) views.
 
-Emotion is a performant and flexible CSS-in-JS library. Building on many other CSS-in-JS libraries, it allows you to style apps quickly with string or object styles. It has predictable composition to avoid specificity issues with CSS. With source maps and labels, Emotion has a great developer experience and great performance with heavy caching in production.
+_`emotion-theming` is a theming library inspired by [styled-components](https://github.com/styled-components/styled-components)_
 
-# [👀 Demo Sandbox](https://codesandbox.io/s/pk1qjqpw67)
+## Table of Contents
 
-# [📖 Docs](https://emotion.sh/docs/introduction)
+* [Install](#install)
+* [Usage](#usage)
+* [API](#api)
+  * [ThemeProvider](#themeprovider)
+  * [withTheme](#withthemecomponent)
+  * [channel](#channel)
+* [Credits](#credits)
+* [License](#license)
 
-Frequently viewed docs:
-
-* [Introduction](https://emotion.sh/docs/introduction)
-* [Install](https://emotion.sh/docs/install)
-* [CSS](https://emotion.sh/docs/css)
-* [Styled Components](https://emotion.sh/docs/styled)
-* [Composition](https://emotion.sh/docs/composition)
-* [Nested Selectors](https://emotion.sh/docs/nested)
-* [Media Queries](https://emotion.sh/docs/media-queries)
-
-### Quick Start
-
-Get up and running with a single import.
+## Install
 
 ```bash
-npm install --save emotion
+# add --save if using npm@4 or lower
+npm i emotion-theming
+
+# or
+yarn add emotion-theming
 ```
 
-```javascript
-import { css } from 'emotion'
+## Usage
 
-const app = document.getElementById('root')
-const myStyle = css`
-  color: rebeccapurple;
+Theming is accomplished by placing the `ThemeProvider` component, at the top of the React component tree and wrapping descendants with the `withTheme` higher-order component (HOC). This HOC seamlessly acquires the current theme and injects it as a "prop" into your own component.
+
+The theme prop is automatically injected into components created with `react-emotion`'s `styled`.
+
+Here is a complete example for a typical React + Emotion app (information about each piece of the theming API is listed afterward):
+
+```jsx
+/** child.js */
+import React from 'react';
+import styled from 'react-emotion';
+
+const Container = styled.div`
+  background: whitesmoke;
+  height: 100vh;
 `
-app.classList.add(myStyle)
-```
 
-### React with [Optional Babel Plugin](docs/babel.md)
-
-```bash
-npm install --save emotion react-emotion babel-plugin-emotion
-```
-
-_Note: use `preact-emotion` in place of `react-emotion` if using [Preact](https://github.com/developit/preact)_
-
-```javascript
-import styled, { css } from 'react-emotion'
-
-const Container = styled('div')`
-  background: #333;
+const Headline = styled.h1`
+  color: ${props => props.theme.color};
+  font: 20px/1.5 sans-serif;
 `
-const myStyle = css`
-  color: rebeccapurple;
-`
-const app = () => (
-  <Container>
-    <p className={myStyle}>Hello World</p>
-  </Container>
-)
+
+export default Page extends React.Component {
+  render() {
+    return (
+      <Container>
+        <Headline>
+          I'm red!
+        </Headline>
+      </Container>
+    );
+  }
+}
+
+/** parent.js */
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { ThemeProvider } from 'emotion-theming';
+
+import Page from './child.js';
+
+const theme = {
+  color: 'red',
+};
+
+class App extends React.Component {
+  render() {
+    return (
+      <ThemeProvider theme={theme}>
+        <Page />
+      </ThemeProvider>
+    );
+  }
+}
+
+// this assumes the HTML page template has a <main> element already inside <body>
+ReactDOM.render(<App />, document.querySelector('main'));
 ```
 
-### Do I Need To Use the Babel Plugin?
+`<ThemeProvider>` acts as a conductor in the component hierarchy and themed components receive the `theme` for whatever purposes are necessary, be it styling or perhaps toggling a piece of functionality.
 
-The babel plugin is not required, but enables some optimizations and customizations that could be beneficial for your project.
+## API
 
-Look here 👉 _[emotion babel plugin feature table and documentation](https://github.com/emotion-js/emotion/tree/master/packages/babel-plugin-emotion)_
+### ThemeProvider: ReactComponent
 
-### Demo Sandbox
+A React component that passes the theme object down the component tree via [context](https://facebook.github.io/react/docs/context.html). Additional `<ThemeProvider>` wrappers may be added deeper in the hierarchy to override the original theme. The theme object will be merged into its ancestor as if by [`Object.assign`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign). If a function is passed instead of an object it will be called with the ancestor theme and the result will be the new theme.
 
-[Demo Code Sandbox](https://codesandbox.io/s/pk1qjqpw67)
+_Accepts:_
 
-### Examples
+* **`children`: ReactComponent** - A single React component.
+* **`theme`: Object|Function** - An object or function that provides an object.
 
-* [emotion website](site) [[Demo Here](https://emotion.sh)]
-* [next-hnpwa-guide-kit](https://github.com/tkh44/next-hnpwa-guide-kit) [[Demo Here](https://hnpwa.life)]
-* [reactivesearch](https://github.com/appbaseio/reactivesearch), a react UI library for Elasticsearch [[Website](https://opensource.appbase.io/reactivesearch/)]
-* [circuit-ui](https://github.com/sumup/circuit-ui), a react component library built at SumUp [[Storybook](https://sumup.github.io/circuit-ui/)]
-* [govuk-react](https://github.com/penx/govuk-react/), a React component library built for UK Government departments
-* **open a PR and add yours!**
+```jsx
+import React from 'react'
+import styled from 'react-emotion'
+import { ThemeProvider, withTheme } from 'emotion-theming'
 
-### Ecosystem
+// object-style theme
 
-* [stylelint](https://github.com/stylelint/stylelint) - A mighty, modern linter that helps you avoid errors and enforce conventions in your styles.
-* [facepaint](https://github.com/emotion-js/facepaint)
-* [emotion-vue](https://github.com/egoist/emotion-vue)
-* [ember-emotion](https://github.com/alexlafroscia/ember-emotion)
-* [CSS to emotion transform](https://transform.now.sh/css-to-emotion/)
-* [ShevyJS](https://github.com/kyleshevlin/shevyjs)
-* [design-system-utils](https://github.com/mrmartineau/design-system-utils) - Utilities to give better access to your design system.
-* [polished](https://github.com/styled-components/polished) - Lightweight set of Sass/Compass-style mixins/helpers for writing styles in JavaScript.
+const theme = {
+  backgroundColor: 'green',
+  color: 'red'
+}
 
-### In the Wild
+// function-style theme; note that if multiple <ThemeProvider> are used,
+// the parent theme will be passed as a function argument
 
-* [healthline.com](https://www.healthline.com)
-* [nytimes.com](https://www.nytimes.com)
-* [vault.crucible.gg](http://vault.crucible.gg/)
-* [saldotuc.com](https://saldotuc.com)
-* [gatsbythemes.com](https://gatsbythemes.com/)
-* [blazity.com](https://blazity.com/)
-* [postmates.com](https://postmates.com/)
-* [thedisconnect.co](https://thedisconnect.co/one)
-* [zefenify.com](https://zefenify.com/about.html)
-* [sentry.io](https://sentry.io)
+const adjustedTheme = ancestorTheme => ({ ...ancestorTheme, color: 'blue' })
 
-## Contributors
+class Container extends React.Component {
+  render() {
+    return (
+      <ThemeProvider theme={theme}>
+        <ThemeProvider theme={adjustedTheme}>
+          <Text>Boom shaka laka!</Text>
+        </ThemeProvider>
+      </ThemeProvider>
+    )
+  }
+}
 
-This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
-<a href="https://github.com/emotion-js/emotion/graphs/contributors"><img src="https://opencollective.com/emotion/contributors.svg?width=890&button=false" /></a>
+const Text = styled.div`
+  background-color: ${props => props.theme.backgroundColor}; // will be green
+  color: ${props => props.theme.color}; // will be blue
+`
+```
 
-## Backers
+### withTheme(component: ReactComponent): Function
 
-Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/emotion#backer)]
+A higher-order component that provides the current theme as a prop to the wrapped child and listens for changes. If the theme is updated, the child component will be re-rendered accordingly.
 
-<a href="https://opencollective.com/emotion#backers" target="_blank"><img src="https://opencollective.com/emotion/backers.svg?width=890"></a>
+```jsx
+import PropTypes from 'prop-types'
+import React from 'react'
+import { withTheme } from 'emotion-theming'
 
-## Sponsors
+class TellMeTheColor extends React.Component {
+  render() {
+    return <div>The color is {this.props.theme.color}.</div>
+  }
+}
 
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/emotion#sponsor)]
+TellMeTheColor.propTypes = {
+  theme: PropTypes.shape({
+    color: PropTypes.string
+  })
+}
 
-<a href="https://opencollective.com/emotion/sponsor/0/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/1/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/1/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/2/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/2/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/3/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/3/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/4/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/4/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/5/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/5/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/6/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/6/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/7/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/7/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/8/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/8/avatar.svg"></a>
-<a href="https://opencollective.com/emotion/sponsor/9/website" target="_blank"><img src="https://opencollective.com/emotion/sponsor/9/avatar.svg"></a>
+const TellMeTheColorWithTheme = withTheme(TellMeTheColor)
+```
+
+### channel: String
+
+The emotion-theming package uses this string as the React context key by default.
+
+If you wish to build your own components on top of this library, it is recommended to import the context key from this package instead of hardcoding its value.
+
+```js
+import { channel } from 'emotion-theming'
+
+console.log(channel)
+;('__EMOTION_THEMING__')
+```
+
+### createBroadcast: Function
+
+Creates a broadcast that is used to listen to theme events via context. This is probably only useful for testing.
+If you have styled components that depend on `theme` via `ThemeProvider`, one option is to wrap all your components being tested
+in `ThemeProvider`. However if you're using `enzyme`, you'll lose the ability to call some methods that require it to be run on the root instance.
+Instead you can `mount` a component a pass the channel and broadcast as part of `context`.
+
+```js
+import { channel, createBroadcast } from 'emotion-theming'
+import { mount } from 'enzyme'
+import PropTypes from 'prop-types'
+import React from 'react'
+
+describe('emotion-theming', function() {
+  it('can use theme from a ThemeProvider', function() {
+    const myTheme = { color: 'green' }
+    const broadcast = createBroadcast(myTheme)
+    const wrapper = mount(<MyComponent />, {
+      context: {
+        [channel]: broadcast
+      },
+      childContextTypes: {
+        [channel]: PropTypes.object
+      }
+    })
+
+    wrapper.setState({ foo: 'bar' })
+    expect(wrapper.state('foo')).toBe('bar')
+  })
+})
+```
+
+## Credits
+
+Thanks goes to the [styled-components team](https://github.com/styled-components/styled-components) and [their contributors](https://github.com/styled-components/styled-components/graphs/contributors) who originally wrote this.
+
+## License
+
+MIT 2017-present
